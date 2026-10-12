@@ -400,6 +400,12 @@ export class CatsService {
     return cat;
   }
 
+  update(id: number, input: { name?: string; age?: number }) {
+    const cat = this.findOne(id);
+    Object.assign(cat, input);
+    return cat;
+  }
+
   remove(id: number) {
     const index = this.cats.findIndex((c) => c.id === id);
     if (index === -1) {
@@ -413,6 +419,7 @@ export class CatsService {
 **Logic:**
 - Data lives in the service, not the controller. If you restart the app, data is gone — that is fine for this lesson. A database comes in Lesson 5.
 - `NotFoundException` makes Nest return HTTP **404** with `{ statusCode: 404, message: "..." }` automatically. Throwing Nest's built-in exceptions is the correct way to return error codes.
+- `update()` calls `findOne(id)` first, so a missing cat gives **404** before anything is changed. `Object.assign` copies only the keys present in `input`, which is what makes `PATCH` a *partial* update.
 
 ### Step 2.4 — Write the controller with all 4 REST verbs
 
@@ -468,17 +475,20 @@ export class CatsController {
 - `@Body()` — the parsed JSON body, available on POST/PATCH/PUT.
 - The controller is thin: it extracts input and calls the service. Business rules live in the service.
 
-### Step 2.5 — Add `update` to the service
+### Step 2.5 — Check `update` works
 
-Add to `cats.service.ts`:
+The service already has all four CRUD methods (see Step 2.3), so there is nothing to add here. Just prove it in Step 2.6:
 
-```typescript
-  update(id: number, input: { name?: string; age?: number }) {
-    const cat = this.findOne(id);
-    Object.assign(cat, input);
-    return cat;
-  }
+```http
+PATCH http://localhost:3000/cats/1
+Content-Type: application/json
+
+{
+  "age": 4
+}
 ```
+
+You get back `{"id":1,"name":"Tom","age":4}` — only `age` changed, `name` was left alone. That is the point of `PATCH` plus `Object.assign`.
 
 ### Step 2.6 — Test all routes manually
 
